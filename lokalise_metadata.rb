@@ -178,8 +178,6 @@ module Fastlane
             translations[parameter.to_sym] = final_translations
           end
 
-          FileUtils.rm_rf Dir['fastlane/metadata/android/*']
-
           translations.each do |key, parameter|
             parameter.each do |lang, text|
               path = "fastlane/metadata/android/#{lang}/#{key}.txt"
