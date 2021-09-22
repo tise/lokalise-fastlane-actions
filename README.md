@@ -1,3 +1,8 @@
+# Tise usage of this repo
+The three files in this repo should be placed in `./fastlane/actions` folder in our iOS and Android repos. These fastlane actions (i.e. functions) allows us to sync App Store and Google Play metadata stored in separate Lokalise projects with corresponding files version controlled in the repos. This metadata is uploaded to the relevant app store from the CI when we make new builds of the apps.
+
+Metadata should *always* be changed in Lokalise and not in the app store directly (PS: Not counting Huawei App Gallery for which we don't have this integration).
+
 # Lokalise Fastlane Actions
 
 Collection of actions for integrating Lokalise into your iOS project using Fastlane. Learn more in our [blog post.](https://blog.lokalise.com/automating-itunes-connect-deployment-with-fastlane-and-lokalise/)
