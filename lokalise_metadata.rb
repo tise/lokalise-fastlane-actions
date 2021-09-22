@@ -9,6 +9,17 @@ module Fastlane
           action = params[:action]
 
           case action
+          when "download_from_lokalise_apple"
+            key_file = metadata_key_file_itunes()
+            metadata = get_metadata_from_lokalise_itunes()
+            write_lokalise_translations_to_itunes_metadata(metadata)
+
+          when "download_from_lokalise_google"
+            release_number = params[:release_number]
+            UI.user_error! "Release number is required when using `update_googleplay` action (should be an integer and greater that 0)" unless (release_number and release_number.is_a?(Integer) and release_number > 0)
+            key_file = metadata_key_file_googleplay
+            metadata = get_metadata_from_lokalise_googleplay()
+            save_metadata_to_files(metadata, release_number)
           when "update_itunes"
             key_file = metadata_key_file_itunes
             metadata = get_metadata_from_lokalise_itunes
@@ -48,6 +59,41 @@ module Fastlane
               upload_metadata_google_play(filtered_metadata) unless filtered_metadata.empty?
             end
           end
+        end
+
+        def write_lokalise_translations_to_itunes_metadata(metadata)
+            metadata_key_file_itunes().each { |key, parameter|
+            final_translations = {}
+                metadata.each { |lang, translations|
+                    if translations.empty? == false
+                    translation = translations[key]
+                    final_translations[lang] = translation if translation != nil && translation.empty? == false
+                    metadata_path = get_metadata_path()
+                    path = File.join(metadata_path, lang)
+                    filename = "#{parameter}.txt"
+                    output_file = File.join(path, filename)
+                    FileUtils.mkdir_p(path) unless File.exist?(path)
+                    puts "Updating '#{output_file}'..."
+                        File.open(output_file, 'wb') do |file|
+                            file.write(final_translations[lang])
+                        end
+                    end
+                }
+            }
+        end
+
+        def get_metadata_path()
+            if @params[:metadata_path]
+            metadata_path = @params[:metadata_path]
+            else
+            case @params[:platform]
+            when "android"
+                metadata_path = "fastlane/metadata/android/"
+            else
+                metadata_path = "fastlane/metadata/"
+            end
+            end
+            return metadata_path
         end
 
         def create_languages(languages, for_itunes)
@@ -603,12 +649,20 @@ module Fastlane
                                          optional: false,
                                          is_string: true,
                                          verify_block: proc do |value|
-                                           UI.user_error! "Action should be update_lokalise_googleplay or update_lokalise_itunes or update_itunes or update_googleplay" unless ["update_lokalise_itunes", "update_lokalise_googleplay", "update_itunes", "update_googleplay"].include? value
+                                           UI.user_error! "Action should be update_lokalise_googleplay or update_lokalise_itunes or update_itunes or update_googleplay or download_from_lokalise_apple or download_from_lokalise_google" unless ["update_lokalise_itunes", "update_lokalise_googleplay", "update_itunes", "update_googleplay", "download_from_lokalise_apple", "download_from_lokalise_google"].include? value
                                          end),
             FastlaneCore::ConfigItem.new(key: :release_number,
                                         description: "Release number is required to update google play",
                                         optional: true,
                                         is_string: false),
+            FastlaneCore::ConfigItem.new(key: :metadata_path,
+                                        description: "Path to downloaded metadata",
+                                        optional: true,
+                                        is_string: true),
+            FastlaneCore::ConfigItem.new(key: :platform,
+                                        description: "Mobile platform in use",
+                                        optional: true,
+                                        is_string: true),
             FastlaneCore::ConfigItem.new(key: :validate_only,
                                         description: "Only validate the metadata (works with only update_googleplay action)",
                                         optional: true,
